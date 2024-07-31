@@ -1,0 +1,38 @@
+name: Gen Proto CI
+
+#on:
+#  workflow_dispatch:
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'protos/**'
+
+env:
+  PROTOC_VERSION: 27.2
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v3
+      with:
+        version: "${{ env.PROTOC_VERSION }}"
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '^1.22.5'
+    - name: Setup protoc-gen-go
+      run: go install github.com/golang/protobuf/protoc-gen-go@v1.5.4
+    - uses: actions/checkout@v4
+      with:
+        repository: 'mingfutest/proto_gen_export'
+        path: 'proto_gen_export'
+        token: ${{secrets.PROTO_GEN_PUSH_TOKEN}}
+    - uses: actions/checkout@v4
+      with:
+        path: 'protos'
+    - name: Gen Code
+      run: chmod +x protos/generate.sh && ./protos/generate.sh
